@@ -109,7 +109,7 @@ h3{margin:28px 4px 10px;font-size:20px}
 <h3>Saved records</h3>
 <div id="list"></div>
 <div class="tools"><button type="button" class="copy fill" id="xl">Save as Excel</button><button type="button" class="copy fill" id="pdf">Save as PDF</button><button type="button" class="copy" id="copy">Copy as text</button></div>
-<p class="hint" style="text-align:center">Records are saved on this device only.</p>
+<p class="hint" id="sync" style="text-align:center">Records are saved on this device only.</p>
 </section>
 </main>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -129,12 +129,32 @@ $("hero").innerHTML='<svg width="84" height="84" viewBox="0 0 100 100" aria-hidd
 function newI(){return{no:"",ok:null,r:""}}
 function newB(){return{name:"",items:[newI()]}}
 var st={people:load(PK),sel:[],edit:false,editing:null,br:[newB()]},recs=load(RK),bl=load(BK),fl=load("pickup-from");
+/* ===== SETTINGS: paste your Google Apps Script web app link and the same secret word as in Code.gs ===== */
+var GAS="PASTE_YOUR_WEB_APP_URL_HERE",KEY="change-this-key";
+function newId(){return"r"+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+recs.forEach(function(r){if(!r._id)r._id=newId()});store(RK,recs);
+var on=GAS.indexOf("https://")===0,q=Promise.resolve(),pending=0,seeded=false;
+function syncMsg(ok){$("sync").textContent=!on?"Records are saved on this device only. Add your Google Apps Script link in index.html to save online.":ok?"Saved online in your Google Sheet. Every record and edit is kept each time you open this link.":"Could not reach Google Sheets. Records are kept on this device for now."}
+function api(b){b.key=KEY;return fetch(GAS,{method:"POST",body:JSON.stringify(b)}).then(function(r){return r.json()}).then(function(j){if(j.error)throw new Error(j.error);return j})}
+function push(b){if(!on)return;pending++;q=q.then(function(){return api(b)}).then(function(){syncMsg(true)},function(){syncMsg(false)}).then(function(){pending--})}
+function saveLists(){store(PK,st.people);store(BK,bl);store("pickup-from",fl);push({action:"lists",lists:{people:st.people,bl:bl,fl:fl}})}
+function commit(rec,id){var i=recs.findIndex(function(x){return x._id===id});rec._id=id;rec.ts=(i>-1&&recs[i].ts)||Date.now();if(i>-1)recs[i]=rec;else recs.unshift(rec);store(RK,recs);push({action:"save",record:rec})}
+function delRec(i){var r=recs.splice(i,1)[0];store(RK,recs);rl();if(r)push({action:"delete",id:r._id})}
+function fbl(){$("bl").innerHTML=bl.map(function(x){return'<option value="'+esc(x)+'">'}).join("")}
+function pull(){if(!on||pending>0)return;
+fetch(GAS+"?action=list&key="+encodeURIComponent(KEY)).then(function(r){return r.json()}).then(function(j){if(j.error)throw new Error(j.error);
+var done=load("pickup-synced").length>0,rs=j.records||[];
+if(!rs.length&&!done&&recs.length){store("pickup-synced",[1]);var base=Date.now();recs.forEach(function(r,k){r.ts=r.ts||base-k*1000;push({action:"save",record:r})});saveLists();return}
+store("pickup-synced",[1]);
+recs=rs.sort(function(a,b){return(b.ts||0)-(a.ts||0)});store(RK,recs);rl();
+if(j.lists){st.people=j.lists.people||[];bl=j.lists.bl||[];fl=j.lists.fl||[];rp();ffl();fbl()}else if(!seeded&&(st.people.length||bl.length||fl.length)){seeded=true;saveLists()}
+syncMsg(true)}).catch(function(){syncMsg(false)})}
 function setNow(){var d=new Date();$("date").value=d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());$("time").value=pad(d.getHours())+":"+pad(d.getMinutes())}
 function rp(){$("people").innerHTML=st.people.map(function(p,i){return'<button type="button" class="opt" data-i="'+i+'" aria-pressed="'+(st.sel.indexOf(p)>-1)+'">'+esc(p)+(st.edit?" ✕":"")+'</button>'}).join("")||'<p class="hint" style="margin:0">No names yet. Add the first one below.</p>';$("editp").textContent=st.edit?"Done":"Edit names"}
 $("people").onclick=function(e){var b=e.target.closest(".opt");if(!b)return;var p=st.people[+b.dataset.i],j=st.sel.indexOf(p);
-if(st.edit){st.people.splice(+b.dataset.i,1);if(j>-1)st.sel.splice(j,1);store(PK,st.people)}else if(j>-1)st.sel=[];else st.sel=[p];rp()};
+if(st.edit){st.people.splice(+b.dataset.i,1);if(j>-1)st.sel.splice(j,1);saveLists()}else if(j>-1)st.sel=[];else st.sel=[p];rp()};
 $("editp").onclick=function(){st.edit=!st.edit;rp()};
-$("addp").onclick=function(){var n=$("newp").value.trim();if(!n)return;if(st.people.indexOf(n)<0)st.people.push(n);st.sel=[n];store(PK,st.people);$("newp").value="";rp()};
+$("addp").onclick=function(){var n=$("newp").value.trim();if(!n)return;if(st.people.indexOf(n)<0)st.people.push(n);st.sel=[n];saveLists();$("newp").value="";rp()};
 document.querySelectorAll("#transport .opt").forEach(function(b){b.onclick=function(){b.setAttribute("aria-pressed",b.getAttribute("aria-pressed")!=="true")}});
 function yn(act,b,p,k,v){var a=' data-act="yn" data-b="'+b+'"'+(p!==null?' data-p="'+p+'"':"")+' data-k="'+k+'"';
 return'<div class="opts yn"><button type="button" class="opt"'+a+' data-v="yes" aria-pressed="'+(v==="yes")+'">Yes</button><button type="button" class="opt no"'+a+' data-v="no" aria-pressed="'+(v==="no")+'">No</button></div>'}
@@ -167,7 +187,7 @@ bs.map(function(b){return'<div class="rb"><b>'+esc(b.name)+'</b>'+
 b.items.map(function(it){return'<p class="line">'+esc(it.no||"")+'<br>'+tag(it.ok,"Condition OK","Damaged")+(it.r?esc(it.r):"")+'</p>'}).join("")+'</div>'}).join("")+'</div>'}).join("");
 el.querySelectorAll(".del").forEach(function(b){b.onclick=function(){
 if(!b.classList.contains("sure")){b.classList.add("sure");b.textContent="Tap again";setTimeout(function(){b.classList.remove("sure");b.textContent="Delete"},3000);return}
-if(st.editing!==null)reset();recs.splice(+b.dataset.i,1);store(RK,recs);rl()}});
+if(st.editing!==null)reset();delRec(+b.dataset.i)}});
 el.querySelectorAll(".edit").forEach(function(b){b.onclick=function(){edit(+b.dataset.i)}})}
 $("save").onclick=function(){
 var tr=[].map.call(document.querySelectorAll("#transport .opt[aria-pressed='true']"),function(b){return b.textContent}),m="";
@@ -184,8 +204,8 @@ else if(its.some(function(x){return x.ok==="no"&&!x.r.trim()}))m=n+"type what is
 return!!m});
 $("err").textContent=m;if(m){$("err").scrollIntoView({block:"center"});return}
 var brs=st.br.map(function(b){return{name:b.name.trim(),items:b.items.filter(function(x){return x.no.trim()}).map(function(x){return{no:x.no.trim(),ok:x.ok,r:x.ok==="no"?x.r.trim():""}})}});
-var rec={from:$("from").value.trim(),date:$("date").value,time:$("time").value,arr:$("arr").value,fare:$("fare").value===""?"":parseFloat($("fare").value),transport:tr,people:st.sel.slice(),branches:brs};if(st.editing!==null)recs[st.editing]=rec;else recs.unshift(rec);store(RK,recs);if(rec.from&&fl.indexOf(rec.from)<0){fl.push(rec.from);store("pickup-from",fl)}ffl();
-brs.forEach(function(b){if(bl.indexOf(b.name)<0)bl.push(b.name)});store(BK,bl);
+var rec={from:$("from").value.trim(),date:$("date").value,time:$("time").value,arr:$("arr").value,fare:$("fare").value===""?"":parseFloat($("fare").value),transport:tr,people:st.sel.slice(),branches:brs};commit(rec,st.editing!==null?st.editing:newId());if(rec.from&&fl.indexOf(rec.from)<0)fl.push(rec.from);ffl();
+brs.forEach(function(b){if(bl.indexOf(b.name)<0)bl.push(b.name)});saveLists();
 reset();rl();location.hash="records"};
 $("copy").onclick=function(){var b=$("copy");function done(s){b.textContent=s;setTimeout(function(){b.textContent="Copy as text"},2000)}
 var t=sorted().map(function(r){return fmt(r)+(r.from?" | From "+r.from:"")+" | Reach office "+(r.arr?tm(r.arr):"-")+" | "+(r.people||[]).join(", ")+" | "+r.transport.join("+")+(r.fare!==""&&r.fare!==undefined?" | S$"+Number(r.fare).toFixed(2):"")+"\n"+(r.branches||[]).map(function(x){return"  "+x.name+"\n"+x.items.map(function(i){return"    "+(i.no||"")+" | Condition OK: "+i.ok+(i.r?" ("+i.r+")":"")}).join("\n")}).join("\n")}).join("\n\n");
@@ -215,7 +235,7 @@ send("pdf","Save as PDF","pickup-records.pdf",d.output("arraybuffer"))};
 function ffl(){$("fl").innerHTML=fl.map(function(x){return'<option value="'+esc(x)+'">'}).join("")}
 function reset(){$("from").value="";st.sel=[];st.br=[newB()];st.editing=null;document.querySelectorAll("#transport .opt").forEach(function(o){o.setAttribute("aria-pressed","false")});$("arr").value="";$("fare").value="";$("banner").hidden=true;$("save").textContent="Save record";setNow();rp();rb()}
 function edit(i){var r=recs[i],bs=r.branches||[{name:r.branch,complete:r.complete,rc:r.rc,items:[]}];
-st.editing=i;st.sel=(r.people||[]).slice();st.sel.forEach(function(p){if(st.people.indexOf(p)<0)st.people.push(p)});
+st.editing=r._id;st.sel=(r.people||[]).slice();st.sel.forEach(function(p){if(st.people.indexOf(p)<0)st.people.push(p)});
 st.br=bs.map(function(b){return{name:b.name,items:b.items.length?b.items.map(function(x){return{no:x.no||"",ok:x.ok,r:x.r||""}}):[newI()]}});
 $("from").value=r.from||"";$("date").value=r.date;$("time").value=r.time;$("arr").value=r.arr||"";$("fare").value=r.fare===undefined?"":r.fare;
 document.querySelectorAll("#transport .opt").forEach(function(o){o.setAttribute("aria-pressed",r.transport.indexOf(o.textContent)>-1)});
@@ -225,6 +245,7 @@ function show(){var rc=location.hash==="#records";$("pg-new").hidden=rc;$("pg-re
 $("t-new").onclick=function(){location.hash="new"};$("t-rec").onclick=function(){location.hash="records"};
 window.addEventListener("hashchange",show);
 ffl();setNow();rp();rb();rl();show();
+if(!on)syncMsg(false);else{pull();setInterval(pull,60000);document.addEventListener("visibilitychange",function(){if(!document.hidden)pull()})}
 })();
 </script>
 </body>
