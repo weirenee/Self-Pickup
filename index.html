@@ -126,8 +126,8 @@ function face(k,c,s){var sh=k==="c"?'<circle cx="50" cy="52" r="42" fill="'+c+'"
 return '<svg width="'+s+'" height="'+s+'" viewBox="0 0 100 100" aria-hidden="true">'+sh+'<circle cx="35" cy="54" r="7" fill="#1f1535"/><circle cx="65" cy="54" r="7" fill="#1f1535"/><circle cx="37" cy="52" r="2.4" fill="#fff"/><circle cx="67" cy="52" r="2.4" fill="#fff"/><path d="M42 68q8 7 16 0" stroke="#1f1535" stroke-width="3.5" fill="none" stroke-linecap="round"/></svg>'}
 document.querySelectorAll("[data-f]").forEach(function(e){var a=e.dataset.f.split("|");e.innerHTML=face(a[0],a[1],34)});
 $("hero").innerHTML='<svg width="84" height="84" viewBox="0 0 100 100" aria-hidden="true"><path d="M20 30q10-24 38-16t30 30q8 26-20 38T24 78Q6 56 20 30z" fill="#f4a6c8"/><polygon points="50,24 78,44 68,76 32,76 22,44" fill="#5b79c9" stroke="#5b79c9" stroke-width="8" stroke-linejoin="round"/><circle cx="40" cy="52" r="5" fill="#1f1535"/><circle cx="60" cy="52" r="5" fill="#1f1535"/><path d="M44 62q6 5 12 0" stroke="#1f1535" stroke-width="3" fill="none" stroke-linecap="round"/></svg>';
-function newI(){return{no:"",sku:"",ok:null,r:""}}
-function newB(){return{name:"",complete:null,rc:"",items:[newI()]}}
+function newI(){return{no:"",ok:null,r:""}}
+function newB(){return{name:"",items:[newI()]}}
 var st={people:load(PK),sel:[],edit:false,editing:null,br:[newB()]},recs=load(RK),bl=load(BK),fl=load("pickup-from");
 function setNow(){var d=new Date();$("date").value=d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());$("time").value=pad(d.getHours())+":"+pad(d.getMinutes())}
 function rp(){$("people").innerHTML=st.people.map(function(p,i){return'<button type="button" class="opt" data-i="'+i+'" aria-pressed="'+(st.sel.indexOf(p)>-1)+'">'+esc(p)+(st.edit?" ✕":"")+'</button>'}).join("")||'<p class="hint" style="margin:0">No names yet. Add the first one below.</p>';$("editp").textContent=st.edit?"Done":"Edit names"}
@@ -144,10 +144,10 @@ return'<div class="bc"><div class="top"><b>Branch '+(i+1)+'</b>'+(st.br.length>1
 '<input list="bl" placeholder="Branch name" autocomplete="off" data-b="'+i+'" data-f="name" value="'+esc(b.name)+'">'+
 '<p class="q">Products collected</p>'+b.items.map(function(it,j){
 return'<div class="it"><div class="top"><span class="hint" style="margin:0">Product '+(j+1)+'</span>'+(b.items.length>1?'<button type="button" class="x" data-act="deli" data-b="'+i+'" data-p="'+j+'">Remove</button>':"")+'</div>'+
-'<div class="row"><input placeholder="Item no." data-b="'+i+'" data-p="'+j+'" data-f="no" value="'+esc(it.no)+'"><input placeholder="SKU" data-b="'+i+'" data-p="'+j+'" data-f="sku" value="'+esc(it.sku)+'"></div>'+
+'<input placeholder="Item no." data-b="'+i+'" data-p="'+j+'" data-f="no" value="'+esc(it.no)+'">'+
 '<p class="q" style="margin-top:10px">Condition OK?</p>'+yn("yn",i,j,"ok",it.ok)+(it.ok==="no"?why("What is damaged?",i,j,"r",it.r):"")+'</div>'}).join("")+
 '<button type="button" class="add" data-act="addi" data-b="'+i+'">+ Add product</button>'+
-'<p class="q">Is the stock complete?</p>'+yn("yn",i,null,"complete",b.complete)+(b.complete==="no"?why("What is missing?",i,null,"rc",b.rc):"")+'</div>'}).join("");
+'</div>'}).join("");
 $("bl").innerHTML=bl.map(function(x){return'<option value="'+esc(x)+'">'}).join("")}
 $("branches").oninput=function(e){var t=e.target;if(t.dataset.f===undefined)return;var b=st.br[+t.dataset.b],o=t.dataset.p!==undefined?b.items[+t.dataset.p]:b;o[t.dataset.f]=t.value};
 $("branches").onclick=function(e){var t=e.target.closest("button");if(!t||!t.dataset.act)return;var a=t.dataset.act,b=st.br[+t.dataset.b];
@@ -163,8 +163,8 @@ if(!recs.length){el.innerHTML='<div class="empty">'+face("c","#f9a825",64)+'No r
 el.innerHTML=recs.map(function(r,i){var bs=r.branches||[{name:r.branch,complete:r.complete,rc:r.rc,items:[]}];
 return'<div class="rec"><div class="top"><b>'+esc((r.people||[]).join(", ")||"Pick-up")+'</b><span><button class="x edit" data-i="'+i+'" type="button">Edit</button><button class="x del" data-i="'+i+'" type="button">Delete</button></span></div>'+
 '<div class="meta">'+(r.from?'From '+esc(r.from)+' · ':'')+'Depart '+esc(fmt(r))+' · '+(r.arr?'Reached office '+esc(tm(r.arr)):'Not reached office yet')+' · '+esc(r.transport.join(" + "))+(r.fare!==""&&r.fare!==undefined?' · S$'+Number(r.fare).toFixed(2):'')+'</div>'+
-bs.map(function(b){return'<div class="rb"><b>'+esc(b.name)+'</b><br>'+tag(b.complete,"Stock complete","Stock incomplete")+(b.rc?'<p class="line"><b>Missing:</b> '+esc(b.rc)+'</p>':"")+
-b.items.map(function(it){return'<p class="line">'+esc([it.no,it.sku,it.name].filter(Boolean).join(" · "))+'<br>'+tag(it.ok,"Condition OK","Damaged")+(it.r?esc(it.r):"")+'</p>'}).join("")+'</div>'}).join("")+'</div>'}).join("");
+bs.map(function(b){return'<div class="rb"><b>'+esc(b.name)+'</b>'+
+b.items.map(function(it){return'<p class="line">'+esc(it.no||"")+'<br>'+tag(it.ok,"Condition OK","Damaged")+(it.r?esc(it.r):"")+'</p>'}).join("")+'</div>'}).join("")+'</div>'}).join("");
 el.querySelectorAll(".del").forEach(function(b){b.onclick=function(){
 if(!b.classList.contains("sure")){b.classList.add("sure");b.textContent="Tap again";setTimeout(function(){b.classList.remove("sure");b.textContent="Delete"},3000);return}
 if(st.editing!==null)reset();recs.splice(+b.dataset.i,1);store(RK,recs);rl()}});
@@ -176,33 +176,31 @@ else if(!$("from").value.trim())m="Step 2: type where we depart from.";
 else if(!$("date").value||!$("time").value)m="Step 2: choose the depart date and time.";
 else if(!tr.length)m="Step 3: choose Bus, MRT or Other.";
 else if($("fare").value!==""&&!(parseFloat($("fare").value)>=0))m="Step 3: type the fare as a number, like 2.50.";
-else st.br.some(function(b,i){var n="Branch "+(i+1)+": ",its=b.items.filter(function(x){return x.no||x.sku});
+else st.br.some(function(b,i){var n="Branch "+(i+1)+": ",its=b.items.filter(function(x){return x.no.trim()});
 if(!b.name.trim())m=n+"type the branch name.";
-else if(!its.length)m=n+"add at least one product (item no. or SKU).";
+else if(!its.length)m=n+"add at least one product (item no.).";
 else if(its.some(function(x){return!x.ok}))m=n+"answer Condition OK for each product.";
 else if(its.some(function(x){return x.ok==="no"&&!x.r.trim()}))m=n+"type what is damaged.";
-else if(!b.complete)m=n+"answer if the stock is complete.";
-else if(b.complete==="no"&&!b.rc.trim())m=n+"type what is missing.";
 return!!m});
 $("err").textContent=m;if(m){$("err").scrollIntoView({block:"center"});return}
-var brs=st.br.map(function(b){return{name:b.name.trim(),complete:b.complete,rc:b.complete==="no"?b.rc.trim():"",items:b.items.filter(function(x){return x.no||x.sku}).map(function(x){return{no:x.no.trim(),sku:x.sku.trim(),ok:x.ok,r:x.ok==="no"?x.r.trim():""}})}});
+var brs=st.br.map(function(b){return{name:b.name.trim(),items:b.items.filter(function(x){return x.no.trim()}).map(function(x){return{no:x.no.trim(),ok:x.ok,r:x.ok==="no"?x.r.trim():""}})}});
 var rec={from:$("from").value.trim(),date:$("date").value,time:$("time").value,arr:$("arr").value,fare:$("fare").value===""?"":parseFloat($("fare").value),transport:tr,people:st.sel.slice(),branches:brs};if(st.editing!==null)recs[st.editing]=rec;else recs.unshift(rec);store(RK,recs);if(rec.from&&fl.indexOf(rec.from)<0){fl.push(rec.from);store("pickup-from",fl)}ffl();
 brs.forEach(function(b){if(bl.indexOf(b.name)<0)bl.push(b.name)});store(BK,bl);
 reset();rl();location.hash="records"};
 $("copy").onclick=function(){var b=$("copy");function done(s){b.textContent=s;setTimeout(function(){b.textContent="Copy as text"},2000)}
-var t=sorted().map(function(r){return fmt(r)+(r.from?" | From "+r.from:"")+" | Reach office "+(r.arr?tm(r.arr):"-")+" | "+(r.people||[]).join(", ")+" | "+r.transport.join("+")+(r.fare!==""&&r.fare!==undefined?" | S$"+Number(r.fare).toFixed(2):"")+"\n"+(r.branches||[]).map(function(x){return"  "+x.name+" | Stock complete: "+x.complete+(x.rc?" ("+x.rc+")":"")+"\n"+x.items.map(function(i){return"    "+[i.no,i.sku,i.name].filter(Boolean).join(" / ")+" | Condition OK: "+i.ok+(i.r?" ("+i.r+")":"")}).join("\n")}).join("\n")}).join("\n\n");
+var t=sorted().map(function(r){return fmt(r)+(r.from?" | From "+r.from:"")+" | Reach office "+(r.arr?tm(r.arr):"-")+" | "+(r.people||[]).join(", ")+" | "+r.transport.join("+")+(r.fare!==""&&r.fare!==undefined?" | S$"+Number(r.fare).toFixed(2):"")+"\n"+(r.branches||[]).map(function(x){return"  "+x.name+"\n"+x.items.map(function(i){return"    "+(i.no||"")+" | Condition OK: "+i.ok+(i.r?" ("+i.r+")":"")}).join("\n")}).join("\n")}).join("\n\n");
 try{navigator.clipboard.writeText(t).then(function(){done("Copied")},function(){done("Copy not allowed")})}catch(e){done("Copy not allowed")}};
-var HEAD=["Date","Depart time","Depart from","Reach office","Who went","Transport","Fare (SGD)","Branch","Stock complete?","Missing reason","Item no.","SKU","Condition OK?","Damage reason"];
+var HEAD=["Date","Depart time","Depart from","Reach office","Who went","Transport","Fare (SGD)","Branch","Item no.","Condition OK?","Damage reason"];
 function yes(v){return v?(v==="yes"?"Yes":"No"):""}
 function sorted(){return recs.slice().sort(function(a,b){return(a.date+a.time)<(b.date+b.time)?-1:1})}
 function dlabel(d){var x=new Date(d+"T00:00");return isNaN(x)?d:x.toLocaleDateString(undefined,{weekday:"short",day:"numeric",month:"short",year:"numeric"})}
-function rows(){var o=[];sorted().forEach(function(r){var fi=1;(r.branches||[{name:r.branch,complete:r.complete,rc:r.rc,items:[]}]).forEach(function(b){(b.items.length?b.items:[{}]).forEach(function(i){o.push([r.date,r.time,r.from||"",r.arr||"",(r.people||[]).join(", "),r.transport.join(" + "),(fi&&r.fare!==""&&r.fare!==undefined?Number(r.fare):""),b.name,yes(b.complete),b.rc||"",i.no||"",i.sku||"",yes(i.ok),i.r||""]);fi=0})})});return o}
+function rows(){var o=[];sorted().forEach(function(r){var fi=1;(r.branches||[{name:r.branch,complete:r.complete,rc:r.rc,items:[]}]).forEach(function(b){(b.items.length?b.items:[{}]).forEach(function(i){o.push([r.date,r.time,r.from||"",r.arr||"",(r.people||[]).join(", "),r.transport.join(" + "),(fi&&r.fare!==""&&r.fare!==undefined?Number(r.fare):""),b.name,i.no||"",yes(i.ok),i.r||""]);fi=0})})});return o}
 function fb(id,t,lbl){var b=$(id);b.textContent=t;setTimeout(function(){b.textContent=lbl},2500)}
 function send(id,lbl,name,data){
 if(!recs.length){fb(id,"No records yet",lbl);return}
 try{var f=new Blob([data],{type:/pdf$/.test(name)?"application/pdf":"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});var a=document.createElement("a");a.href=URL.createObjectURL(f);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href)},4000);fb(id,"Saved",lbl)}catch(e){fb(id,"Could not save",lbl)}}
 $("xl").onclick=function(){if(typeof XLSX==="undefined"){fb("xl","Not available here","Save as Excel");return}
-var ws=XLSX.utils.aoa_to_sheet([HEAD].concat(rows()));ws["!cols"]=[12,12,18,12,20,12,11,18,10,22,10,14,10,22].map(function(w){return{wch:w}});
+var ws=XLSX.utils.aoa_to_sheet([HEAD].concat(rows()));ws["!cols"]=[12,12,18,12,20,12,11,18,12,10,22].map(function(w){return{wch:w}});
 var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Pick-ups");
 send("xl","Save as Excel","pickup-records.xlsx",XLSX.write(wb,{bookType:"xlsx",type:"array"}))};
 $("pdf").onclick=function(){if(!window.jspdf){fb("pdf","Not available here","Save as PDF");return}
@@ -211,14 +209,14 @@ function w(t,sz,bold,ind){d.setFontSize(sz);d.setFont("helvetica",bold?"bold":"n
 w("Pick-up Stock Record",18,1,0);y+=3;
 var last="";sorted().forEach(function(r){if(r.date!==last){last=r.date;y+=4;w(dlabel(r.date),14,1,0)}y+=2;w((r.people||[]).join(", ")||"Pick-up",12,1,3);w((r.from?"From "+r.from+" at ":"Depart ")+tm(r.time)+" | Reach office "+(r.arr?tm(r.arr):"-")+" | "+r.transport.join(" + ")+(r.fare!==""&&r.fare!==undefined?" | Fare S$"+Number(r.fare).toFixed(2):""),10,0,3);
 (r.branches||[{name:r.branch,complete:r.complete,rc:r.rc,items:[]}]).forEach(function(b){y+=1.5;
-w("Branch: "+b.name+" - Stock "+(b.complete==="yes"?"complete":"incomplete"+(b.rc?" ("+b.rc+")":"")),11,1,4);
-b.items.forEach(function(i){w("- "+[i.no,i.sku,i.name].filter(Boolean).join(" / ")+" - "+(i.ok==="yes"?"Condition OK":"Damaged"+(i.r?" ("+i.r+")":"")),10,0,8)})});y+=2});
+w("Branch: "+b.name,11,1,4);
+b.items.forEach(function(i){w("- "+(i.no||"")+" - "+(i.ok==="yes"?"Condition OK":"Damaged"+(i.r?" ("+i.r+")":"")),10,0,8)})});y+=2});
 send("pdf","Save as PDF","pickup-records.pdf",d.output("arraybuffer"))};
 function ffl(){$("fl").innerHTML=fl.map(function(x){return'<option value="'+esc(x)+'">'}).join("")}
 function reset(){$("from").value="";st.sel=[];st.br=[newB()];st.editing=null;document.querySelectorAll("#transport .opt").forEach(function(o){o.setAttribute("aria-pressed","false")});$("arr").value="";$("fare").value="";$("banner").hidden=true;$("save").textContent="Save record";setNow();rp();rb()}
 function edit(i){var r=recs[i],bs=r.branches||[{name:r.branch,complete:r.complete,rc:r.rc,items:[]}];
 st.editing=i;st.sel=(r.people||[]).slice();st.sel.forEach(function(p){if(st.people.indexOf(p)<0)st.people.push(p)});
-st.br=bs.map(function(b){return{name:b.name,complete:b.complete,rc:b.rc||"",items:b.items.length?b.items.map(function(x){return{no:x.no||"",sku:x.sku||"",ok:x.ok,r:x.r||""}}):[newI()]}});
+st.br=bs.map(function(b){return{name:b.name,items:b.items.length?b.items.map(function(x){return{no:x.no||"",ok:x.ok,r:x.r||""}}):[newI()]}});
 $("from").value=r.from||"";$("date").value=r.date;$("time").value=r.time;$("arr").value=r.arr||"";$("fare").value=r.fare===undefined?"":r.fare;
 document.querySelectorAll("#transport .opt").forEach(function(o){o.setAttribute("aria-pressed",r.transport.indexOf(o.textContent)>-1)});
 $("banner").hidden=false;$("save").textContent="Save changes";rp();rb();location.hash="new";window.scrollTo(0,0)}

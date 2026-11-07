@@ -3,7 +3,7 @@
 A simple, mobile-friendly tracker for self pick-up stock records. Works on phone and computer browsers.
 
 - Pick who is going, where and when you depart, transport and fare (SGD), and the time you reach the office
-- Add many branches, with the products collected at each (item no., SKU, condition)
+- Add many branches, with the products collected at each (item no. and condition)
 - Edit records after saving
 - Save all records as **Excel** or **PDF** (sorted by date), or copy as text
 
